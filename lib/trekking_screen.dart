@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -52,7 +53,7 @@ class _TrekkingScreenState extends State<TrekkingScreen> {
     setState(() => _starting = true);
 
     try {
-      if (!await Geolocator.isLocationServiceEnabled()) {
+      if (!kIsWeb && !await Geolocator.isLocationServiceEnabled()) {
         _showMessage(
           'Turn on location services to start tracking.',
           action: SnackBarAction(
@@ -69,18 +70,28 @@ class _TrekkingScreenState extends State<TrekkingScreen> {
       }
       if (!mounted) return;
       if (permission == LocationPermission.deniedForever) {
-        _showMessage(
-          'Location access is blocked. Allow it in app settings.',
-          action: SnackBarAction(
-            label: 'Settings',
-            onPressed: Geolocator.openAppSettings,
-          ),
-        );
+        if (kIsWeb) {
+          _showMessage(
+            'Location is blocked by your browser. Allow it for this site, then retry.',
+          );
+        } else {
+          _showMessage(
+            'Location access is blocked. Allow it in app settings.',
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: Geolocator.openAppSettings,
+            ),
+          );
+        }
         return;
       }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.unableToDetermine) {
-        _showMessage('Location permission is needed to record a trek.');
+        _showMessage(
+          kIsWeb
+              ? 'Allow browser location access for this site to record a trek.'
+              : 'Location permission is needed to record a trek.',
+        );
         return;
       }
 
@@ -103,7 +114,7 @@ class _TrekkingScreenState extends State<TrekkingScreen> {
             ),
           ).listen(
             _onPosition,
-            onError: (Object error, StackTrace stackTrace) {
+            onError: (Object _) {
               _handleLocationError();
             },
           );
@@ -113,9 +124,17 @@ class _TrekkingScreenState extends State<TrekkingScreen> {
       });
       setState(() => _status = TrekStatus.recording);
     } on LocationServiceDisabledException {
-      _showMessage('Location services are unavailable on this device.');
+      _showMessage(
+        kIsWeb
+            ? 'Browser location is unavailable. Use HTTPS or localhost and allow location for this site.'
+            : 'Location services are unavailable on this device.',
+      );
     } on PermissionDefinitionsNotFoundException {
-      _showMessage('Location permission setup is missing from the app.');
+      _showMessage(
+        kIsWeb
+            ? 'Browser location is unavailable. Use HTTPS or localhost and allow location for this site.'
+            : 'Location permission setup is missing from the app.',
+      );
     } finally {
       if (mounted) setState(() => _starting = false);
     }
@@ -169,7 +188,11 @@ class _TrekkingScreenState extends State<TrekkingScreen> {
 
   Future<void> _handleLocationError() async {
     await _stop();
-    _showMessage('Location updates stopped. Check your device settings.');
+    _showMessage(
+      kIsWeb
+          ? "Browser location updates stopped. Check this site's permission and keep the tab active."
+          : 'Location updates stopped. Check your device settings.',
+    );
   }
 
   void _showMessage(String message, {SnackBarAction? action}) {

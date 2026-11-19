@@ -1,8 +1,8 @@
 # Trek Maps
 
-A Flutter iOS and Android trekking tracker using Mapy.com outdoor map tiles. The
-Mapy.com REST API supplies raster tiles; `flutter_map` renders them in a native
-Flutter UI. Mapy.com does not provide a Flutter-specific renderer.
+A Flutter iOS, Android, and web trekking tracker using Mapy.com outdoor map
+tiles. The Mapy.com REST API supplies raster tiles; `flutter_map` renders them
+in Flutter. Mapy.com does not provide a Flutter-specific renderer.
 
 ## Mapy.com API key
 
@@ -21,11 +21,37 @@ The app uses Mapy.com's `outdoor` tile set and its `/v1/maptiles/{mapset}/256/{z
 copyright link over the map. A map key is required to load tiles; without it,
 the app shows setup guidance while the trek controls remain available.
 
-An API key embedded in a mobile app can be extracted. Restrict its allowed
-services and usage in the Mapy.com portal, monitor its quota, and use a
-separate key for development and production. See Mapy.com's [API key security
+A key included in a mobile app or compiled web bundle can be extracted.
+Restrict its allowed services and HTTP referrers (domain and port) in the
+Mapy.com portal, monitor its quota, and use separate keys for development and
+production. See Mapy.com's [API key security
 guide](https://developer.mapy.com/portal-muj-ucet/zabezpeceni-api-klice/) and
 [attribution requirements](https://developer.mapy.com/rest-api/atributovani/).
+
+## Web
+
+Run locally in Chrome with:
+
+```sh
+flutter run -d chrome --dart-define=MAPY_API_KEY=your_api_key
+```
+
+Build static web files with:
+
+```sh
+flutter build web --dart-define=MAPY_API_KEY=your_api_key
+```
+
+The output is in `build/web`. Serve it from HTTPS in production; browser
+geolocation is available only in a secure context. `localhost` is generally
+treated as secure for local development. The browser asks for location access
+when tracking starts. If access is blocked, allow it in the browser's site
+settings and retry. Embedding the app in a cross-origin iframe may also require
+the host's Permissions Policy to allow geolocation.
+
+Browser permissions and background-tab behavior are controlled by the browser.
+This app records only while in use and does not guarantee location updates
+while the page is hidden or the browser is suspended.
 
 ## Trek recording
 
